@@ -18,6 +18,7 @@ public abstract class InitializeNetwork {
     }
 
     void send(Serializable data) throws Exception{
+        System.out.println(data);
         connected.toServer.writeObject(data);
     }
 

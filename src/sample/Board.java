@@ -2,6 +2,7 @@ package sample;
 
 import javafx.geometry.HPos;
 import javafx.geometry.VPos;
+import javafx.scene.Group;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.RowConstraints;
@@ -9,6 +10,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 public class Board {
@@ -22,7 +24,7 @@ public class Board {
 
 
     //array of pieces
-    protected ArrayList<ArrayList<Piece>> pieces = new ArrayList<>(8);
+    public ArrayList<ArrayList<Piece>> pieces = new ArrayList<>(8);
 
     public void start(GridPane pane) {
 
@@ -35,37 +37,53 @@ public class Board {
 
     }
 
-    public Board(InitializeNetwork gameConn, GridPane pane, Stage stage) {
+    // creates the board
+    public Board(InitializeNetwork gameConn, GridPane pane, Stage stage) throws InterruptedException {
         this.gameConn = gameConn;
 
-        // fill
-        for (int i = 0; i < 8; i++) {
-            pieces.add(new ArrayList<>());  // fills with arrays
-            for (int j = 0; j < 8; j++) {
-                pieces.get(i).add(new Piece());  // fills array with pieces
+        Thread fillThread = new Thread("fill"){
+            @Override
+            public void run(){
+                // fill board with invisible pieces
+                for (int i = 0; i < 8; i++) {
+                    pieces.add(new ArrayList<>());  // fills with arrays
+                    for (int j = 0; j < 8; j++) {
+                        pieces.get(i).add(new Piece());  // fills array with pieces
+                    }
+                }
             }
-        }
+        };
 
-        // create board
-        pane.setGridLinesVisible(true);
-        for (int i = 0; i < 8; i++) {
-            ColumnConstraints colConst = new ColumnConstraints();
-            colConst.setPercentWidth(100.0 / 8);
-            colConst.setHalignment(HPos.CENTER);
-            pane.getColumnConstraints().add(colConst);
-        }
-        for (int i = 0; i < 8; i++) {
-            RowConstraints rowConst = new RowConstraints();
-            rowConst.setPercentHeight(100.0 / 8);
-            rowConst.setValignment(VPos.CENTER);
-            pane.getRowConstraints().add(rowConst);
-        }
+        Thread boardCreationThread = new Thread("boardCreation"){
+            @Override
+            public void run(){
+                // create board
+                pane.setGridLinesVisible(true);
+                for (int i = 0; i < 8; i++) {
+                    ColumnConstraints colConst = new ColumnConstraints();
+                    colConst.setPercentWidth(100.0 / 8);
+                    colConst.setHalignment(HPos.CENTER);
+                    pane.getColumnConstraints().add(colConst);
+
+                    RowConstraints rowConst = new RowConstraints();
+                    rowConst.setPercentHeight(100.0 / 8);
+                    rowConst.setValignment(VPos.CENTER);
+                    pane.getRowConstraints().add(rowConst);
+                }
+            }
+        };
+
+        fillThread.start();
+        boardCreationThread.start();
+
+        fillThread.join();
+        boardCreationThread.join();
 
         start(pane);
     }
 
     // placement
-    public void placement(GridPane pane, int cI, int rI) {
+    public boolean placement(GridPane pane, int cI, int rI) {
 
         if (started) {
             if (isIllegal(cI, rI) == 0) {
@@ -112,6 +130,9 @@ public class Board {
 
                 countScore();
                 showLegal(pane);
+                return true;
+            } else {
+                return false;
             }
 
         } else {
@@ -123,6 +144,7 @@ public class Board {
 
             countScore();
         }
+        return false;
     }
 
     public void showLegal(GridPane pane) {

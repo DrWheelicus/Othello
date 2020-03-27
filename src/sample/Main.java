@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -17,14 +18,16 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 
 public class Main extends Application {
 
     public GridPane pane = new GridPane();
-    private long chatPort, gamePort;
+    private long gamePort;
     private String ip = "localhost";
     private Text invalid = new Text();
     private Board board;
+    private int player;
 
     @Override
     public void start(Stage primaryStage) throws Exception{
@@ -93,15 +96,13 @@ public class Main extends Application {
             primaryStage.setScene(createScene);
             createGame.setOnAction(e1 -> {
                 try {
-                    chatPort = Long.parseLong(txtPortName1.getText());
                     gamePort = Long.parseLong(txtPortName1.getText()) - 1;
                 } catch (Exception ex1){
                     ex1.printStackTrace();
                 }
 
-                if (chatPort > 1 && chatPort < 65534) {
-                    int port = (int) chatPort;
-                    int port1 = (int) gamePort;
+                if (gamePort > 1 && gamePort < 65534) {
+                    int port = (int) gamePort;
 
                     InitializeNetwork gameConnection = new Server(port, (data) -> {
                         Platform.runLater(() -> {
@@ -114,9 +115,10 @@ public class Main extends Application {
                     });
 
                     primaryStage.setTitle("Othello Player 1");
+                    player = 0;
 
                     try {
-                        game(gameConnection, primaryStage);
+                        board(gameConnection, primaryStage);
                         gameConnection.start();
                     } catch (Exception ex) {
                         ex.printStackTrace();
@@ -132,15 +134,13 @@ public class Main extends Application {
             primaryStage.setScene(joinScene);
             joinGame.setOnAction(e1 -> {
                 try {
-                    chatPort = Long.parseLong(txtPortName2.getText());
                     gamePort = Long.parseLong(txtPortName2.getText()) - 1;
                 } catch (Exception ex1){
                     ex1.printStackTrace();
                 }
 
-                if (chatPort > 1 && chatPort < 65534) {
-                    int port = (int) chatPort;
-                    int port1 = (int) gamePort;
+                if (gamePort > 1 && gamePort < 65534) {
+                    int port = (int) gamePort;
 
                     InitializeNetwork gameConnection = new Server(port, (data) -> {
                         Platform.runLater(() -> {
@@ -153,7 +153,7 @@ public class Main extends Application {
                     });
 
                     try {
-                        game(gameConnection, primaryStage);
+                        board(gameConnection, primaryStage);
                         gameConnection.start();
                     } catch (Exception ex) {
                         invalid.setText("Invalid IP.");
@@ -163,6 +163,7 @@ public class Main extends Application {
                         Thread.sleep(100);
                         if (gameConnection.connected.socket.isConnected()){
                             primaryStage.setTitle("Othello Player 2");
+                            player = 1;
                         }
                     } catch (InterruptedException ex) {
                         ex.printStackTrace();
@@ -182,40 +183,52 @@ public class Main extends Application {
             // TODO: Figure out how to synchronize board data
         }
         if (data instanceof Boolean){
-            board.player = 1;
+            //board.player = 1;
         }
+        if (data instanceof ArrayList){
+            board.pieces = (ArrayList<ArrayList<Piece>>) data;
+        }
+        //board.pieces = (ArrayList<ArrayList<Piece>>) data;
     }
 
     
-    protected void game(InitializeNetwork gameConn, Stage primaryStage) throws Exception{
+    protected void board(InitializeNetwork gameConn, Stage primaryStage) throws Exception{
         board = new Board(gameConn, pane, primaryStage);
 
-        primaryStage.setMinHeight(600);
-        primaryStage.setMaxHeight(600);
-        primaryStage.setMinWidth(600);
-        primaryStage.setMaxWidth(600);
+        System.out.println(board.player);
+        System.out.println(player);
+        if (board.player == player) {
 
-        Scene scene = new Scene(pane, 600, 600);
-        scene.setFill(Color.GREEN);
+            primaryStage.setMinHeight(600);
+            primaryStage.setMaxHeight(600);
+            primaryStage.setMinWidth(600);
+            primaryStage.setMaxWidth(600);
 
-        int c = 0;
-        while(c < 1) {
+            Scene scene = new Scene(pane, 600, 600);
+            scene.setFill(Color.GREEN);
+
             pane.setOnMouseClicked(e -> {
-                System.out.println(Math.round(e.getX()) / 75);
-                System.out.println(Math.round(e.getY()) / 75);
-                int colIndex = (int) Math.round(e.getX()) / 75;
-                int rowIndex = (int) Math.round(e.getY()) / 75;
+                int c = 0;
+                while(c < 1) {
+                    System.out.println(Math.round(e.getX()) / 75);
+                    System.out.println(Math.round(e.getY()) / 75);
+                    int colIndex = (int) Math.round(e.getX()) / 75;
+                    int rowIndex = (int) Math.round(e.getY()) / 75;
 
-                board.placement(pane, colIndex, rowIndex);
-
+                    if(board.placement(pane, colIndex, rowIndex)) { c++; }
+                }
             });
 
-            c++;
+            primaryStage.setScene(scene);
+            primaryStage.setResizable(false);
+
+            try {
+                gameConn.send(board.pieces);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
 
         }
-
-        primaryStage.setScene(scene);
-        primaryStage.setResizable(false);
     }
 
     private Scene newPane(GridPane pane, Button button) {

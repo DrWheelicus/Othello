@@ -98,3 +98,13 @@ fabric.properties
 
 .floo
 .flooignore
+/Othello.iml
+.gradle/5.2.1/fileContent/
+.gradle/5.2.1/javaCompile/
+.gradle/5.2.1/vcsMetadata-1/
+.gradle/vcs-1/
+build/distributions/Othello-1.0.tar
+build/generated/
+build/scripts/
+build/tmp/
+/src/META-INF/

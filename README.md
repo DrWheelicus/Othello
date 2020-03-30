@@ -13,7 +13,7 @@ Basic rules for the game are as follows:
 
 - The game is over when neither player has a legal move (i.e. a move that captures at least one opposing piece) or when the board is full.
 
-![Game Image](images/game.png)
+![Game Image](./game.png)
 
 ## Getting Started
 ### How to Install

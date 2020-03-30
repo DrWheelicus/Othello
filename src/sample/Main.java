@@ -67,7 +67,15 @@ public class Main extends Application {
 
         //exit function to quit the application
         MenuItem exitMenuItem = new MenuItem("Exit");
-        exitMenuItem.setOnAction(actionEvent -> Platform.exit());
+        exitMenuItem.setOnAction(actionEvent -> {
+            try {
+                writeCSV();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+
+            Platform.exit();
+        });
 
         menu1.getItems().addAll(openMenuItem, saveMenuItem, exitMenuItem);
         menuBar.getMenus().add(menu1);
@@ -281,6 +289,7 @@ public class Main extends Application {
             ex.printStackTrace();
         }
         finally {
+            assert writer != null;
             writer.flush();
             writer.close();
         }
@@ -307,7 +316,7 @@ public class Main extends Application {
         }
     }
 
-    public static class Person {
+    public class Person {
         private final SimpleStringProperty name;
         private final SimpleStringProperty score;
 

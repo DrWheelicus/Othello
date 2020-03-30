@@ -16,7 +16,6 @@
       <element id="archive" name="Othello.jar">
         <element id="module-output" name="Othello" />
       </element>
-      <element id="library" level="project" name="lib" />
     </root>
   </artifact>
 </component>
